@@ -1,9 +1,11 @@
-const CACHE_NAME = 'mi-pwa-v1';
+const CACHE_NAME = 'mi-pwa-v2'; 
+
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/styles.css',
-  '/script.js'
+  './',              // El punto indica la carpeta actual
+  './index.html',
+  './styles.css',
+  './script.js',
+  './manifest.json'  // Agregamos el manifest al cache
 ];
 
 // Evento: Instalación del Service Worker
@@ -11,7 +13,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('Cache abierto');
+        console.log('Cache v2 abierto');
         return cache.addAll(urlsToCache);
       })
   );

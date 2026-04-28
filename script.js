@@ -8,11 +8,14 @@ let videoStream = null;
 let scanInterval = null;
 
 // ========== INICIALIZACIÓN ==========
-document.addEventListener('DOMContentLoaded', () => {
-  // Splash screen
+// Usar window.onload para asegurar que todo está cargado
+window.onload = function() {
+  // Splash screen - ocultar después de 2 segundos
   setTimeout(() => {
-    document.getElementById('splash').classList.add('hidden');
-    document.getElementById('home').classList.add('active');
+    const splash = document.getElementById('splash');
+    const home = document.getElementById('home');
+    if (splash) splash.classList.add('hidden');
+    if (home) home.classList.add('active');
   }, 2000);
 
   // Service Worker
@@ -23,11 +26,11 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Cargar datos guardados
-  loadAlumnoProfile();
-  renderAttendanceTable();
-  renderAlumnoHistory();
-  populateAlumnoFilter();
-});
+  if (typeof loadAlumnoProfile === 'function') loadAlumnoProfile();
+  if (typeof renderAttendanceTable === 'function') renderAttendanceTable();
+  if (typeof renderAlumnoHistory === 'function') renderAlumnoHistory();
+  if (typeof populateAlumnoFilter === 'function') populateAlumnoFilter();
+};
 
 // ========== NAVEGACIÓN ==========
 function navigateTo(screenId) {

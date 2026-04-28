@@ -14,7 +14,6 @@
   <title>Asistencia Escolar</title>
 </head>
 <body>
-  <!-- Splash Screen -->
   <div id="splash">
     <div class="splash-content">
       <div class="logo">🎓</div>
@@ -23,7 +22,6 @@
     </div>
   </div>
 
-  <!-- Home - Selección de rol -->
   <div id="home" class="screen hidden">
     <header>
       <h1>Asistencia Escolar</h1>
@@ -31,12 +29,12 @@
     </header>
     <main>
       <div class="role-cards">
-        <div class="role-card" onclick="navigateTo('maestro')">
+        <div class="role-card" onclick="navigateTo('login-maestro')">
           <div class="icon">👨‍🏫</div>
           <h2>Maestro</h2>
           <p>Generar QR y ver reportes</p>
         </div>
-        <div class="role-card" onclick="navigateTo('alumno')">
+        <div class="role-card" onclick="navigateTo('login-alumno')">
           <div class="icon">👨‍🎓</div>
           <h2>Alumno</h2>
           <p>Escanear código QR</p>
@@ -45,11 +43,51 @@
     </main>
   </div>
 
-  <!-- Vista Maestro -->
+  <div id="login-maestro" class="screen hidden">
+    <header>
+      <button class="back-btn" onclick="navigateTo('home')">←</button>
+      <h1>Login Maestro</h1>
+    </header>
+    <main>
+      <section>
+        <div class="form-group">
+          <label>Usuario:</label>
+          <input type="text" id="user-maestro" placeholder="Usuario">
+        </div>
+        <div class="form-group">
+          <label>Contraseña:</label>
+          <input type="password" id="pass-maestro" placeholder="********">
+        </div>
+        <button class="btn-primary" onclick="authMaestro()">Entrar</button>
+      </section>
+    </main>
+  </div>
+
+  <div id="login-alumno" class="screen hidden">
+    <header>
+      <button class="back-btn" onclick="navigateTo('home')">←</button>
+      <h1>Login Alumno</h1>
+    </header>
+    <main>
+      <section>
+        <div class="form-group">
+          <label>Matrícula:</label>
+          <input type="text" id="user-alumno" placeholder="Matrícula">
+        </div>
+        <div class="form-group">
+          <label>PIN/Password:</label>
+          <input type="password" id="pass-alumno" placeholder="********">
+        </div>
+        <button class="btn-primary" onclick="authAlumno()">Entrar</button>
+      </section>
+    </main>
+  </div>
+
   <div id="maestro" class="screen hidden">
     <header>
       <button class="back-btn" onclick="navigateTo('home')">←</button>
       <h1>Panel del Maestro</h1>
+      <button class="logout-btn" onclick="logout()" style="margin-left: auto; background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px;">Cerrar Sesión</button>
     </header>
     <main>
       <section class="qr-section">
@@ -100,11 +138,11 @@
     </main>
   </div>
 
-  <!-- Vista Alumno -->
   <div id="alumno" class="screen hidden">
     <header>
       <button class="back-btn" onclick="navigateTo('home')">←</button>
       <h1>Registro de Asistencia</h1>
+      <button class="logout-btn" onclick="logout()" style="margin-left: auto; background: none; border: 1px solid white; color: white; padding: 5px 10px; border-radius: 5px;">Cerrar Sesión</button>
     </header>
     <main>
       <section class="profile-section">
@@ -145,7 +183,6 @@
     </main>
   </div>
 
-  <!-- Notificaciones -->
   <div id="notification-toast" class="notification hidden">
     <span id="notification-message"></span>
     <button onclick="closeNotification()">✕</button>

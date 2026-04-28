@@ -9,7 +9,6 @@ let scanInterval = null;
 
 // ========== INICIALIZACIÓN ==========
 window.onload = function() {
-  // Splash screen - ocultar después de 2 segundos
   setTimeout(() => {
     const splash = document.getElementById('splash');
     const home = document.getElementById('home');
@@ -22,22 +21,64 @@ window.onload = function() {
     }
   }, 2000);
 
-  // Service Worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('SW registrado'))
       .catch(err => console.log('SW error:', err));
   }
 
-  // Cargar datos guardados
   loadAlumnoProfile();
   renderAttendanceTable();
   renderAlumnoHistory();
   populateAlumnoFilter();
 };
 
-// ========== NAVEGACIÓN ==========
+// ========== SISTEMA DE AUTENTICACIÓN ==========
+
+function authMaestro() {
+  const user = document.getElementById('user-maestro').value;
+  const pass = document.getElementById('pass-maestro').value;
+
+  // Credenciales de prueba: admin / 1234
+  if (user === "admin" && pass === "1234") {
+    sessionStorage.setItem('isMaestro', 'true');
+    navigateTo('maestro');
+    showNotification('Bienvenido, Maestro', 'success');
+  } else {
+    showNotification('Usuario o contraseña incorrectos', 'error');
+  }
+}
+
+function authAlumno() {
+  const matricula = document.getElementById('user-alumno').value;
+  const pass = document.getElementById('pass-alumno').value;
+
+  // Para alumnos: cualquier matrícula y contraseña '1234'
+  if (matricula.trim() !== "" && pass === "1234") {
+    sessionStorage.setItem('isAlumno', 'true');
+    navigateTo('alumno');
+    showNotification('Bienvenido, Alumno', 'success');
+  } else {
+    showNotification('Matrícula o contraseña incorrectos', 'error');
+  }
+}
+
+function logout() {
+  sessionStorage.clear();
+  navigateTo('home');
+  showNotification('Sesión cerrada', 'info');
+}
+
+// ========== NAVEGACIÓN PROTEGIDA ==========
 function navigateTo(screenId) {
+  // Protección de rutas: Si intenta ir a maestro/alumno sin login, lo mandamos al login
+  if (screenId === 'maestro' && !sessionStorage.getItem('isMaestro')) {
+    screenId = 'login-maestro';
+  }
+  if (screenId === 'alumno' && !sessionStorage.getItem('isAlumno')) {
+    screenId = 'login-alumno';
+  }
+
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
     s.classList.add('hidden');

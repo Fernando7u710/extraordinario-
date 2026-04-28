@@ -2,7 +2,7 @@
   "name": "Asistencia Escolar",
   "short_name": "Asistencia",
   "description": "App de asistencia escolar con código QR",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4a90e2",

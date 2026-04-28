@@ -13,6 +13,7 @@ const firebaseConfig = {
 // Inicializar Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
+db.ref('test_conexion').set({ saludo: "Hola desde el dispositivo", fecha: Date.now() });
 
 // ========== VARIABLES GLOBALES ==========
 let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];

@@ -8,10 +8,8 @@ let videoStream = null;
 let scanInterval = null;
 
 // ========== INICIALIZACIÓN ==========
-// Usar window.onload para asegurar que todo está cargado
 window.onload = function() {
   // Splash screen - ocultar después de 2 segundos
-// Splash screen - ocultar después de 2 segundos
   setTimeout(() => {
     const splash = document.getElementById('splash');
     const home = document.getElementById('home');
@@ -19,35 +17,37 @@ window.onload = function() {
     if (splash) splash.classList.add('hidden');
     
     if (home) {
-      home.classList.remove('hidden'); // <--- Línea crucial
+      home.classList.remove('hidden');
       home.classList.add('active');
     }
   }, 2000);
 
   // Service Worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
+    navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('SW registrado'))
       .catch(err => console.log('SW error:', err));
   }
 
   // Cargar datos guardados
-  if (typeof loadAlumnoProfile === 'function') loadAlumnoProfile();
-  if (typeof renderAttendanceTable === 'function') renderAttendanceTable();
-  if (typeof renderAlumnoHistory === 'function') renderAlumnoHistory();
-  if (typeof populateAlumnoFilter === 'function') populateAlumnoFilter();
+  loadAlumnoProfile();
+  renderAttendanceTable();
+  renderAlumnoHistory();
+  populateAlumnoFilter();
 };
 
 // ========== NAVEGACIÓN ==========
 function navigateTo(screenId) {
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
-    s.classList.add('hidden'); // Asegura que todas se oculten
+    s.classList.add('hidden');
   });
   
   const target = document.getElementById(screenId);
-  target.classList.remove('hidden'); // Muestra la seleccionada
-  target.classList.add('active');
+  if (target) {
+    target.classList.remove('hidden');
+    target.classList.add('active');
+  }
 }
 
 // ========== NOTIFICACIONES ==========
@@ -55,6 +55,8 @@ function showNotification(message, type = 'info') {
   const toast = document.getElementById('notification-toast');
   const msgSpan = document.getElementById('notification-message');
   
+  if (!toast || !msgSpan) return;
+
   toast.className = `notification ${type}`;
   msgSpan.textContent = message;
   toast.classList.remove('hidden');
@@ -63,7 +65,8 @@ function showNotification(message, type = 'info') {
 }
 
 function closeNotification() {
-  document.getElementById('notification-toast').classList.add('hidden');
+  const toast = document.getElementById('notification-toast');
+  if (toast) toast.classList.add('hidden');
 }
 
 // ========== VISTA MAESTRO: GENERAR QR ==========
@@ -75,7 +78,6 @@ function generateQR() {
     return;
   }
 
-  // Generar código único
   const qrData = {
     class: className,
     timestamp: Date.now(),
@@ -83,19 +85,16 @@ function generateQR() {
   };
 
   qrCode = qrData;
-  qrExpirationTime = Date.now() + 5 * 60 * 1000; // 5 minutos
+  qrExpirationTime = Date.now() + 5 * 60 * 1000;
 
-  // Generar QR visual (simulado)
   const canvas = document.getElementById('qr-canvas');
   const ctx = canvas.getContext('2d');
   canvas.width = 200;
   canvas.height = 200;
 
-  // Fondo blanco
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, 200, 200);
 
-  // Dibujar patrón QR simulado
   ctx.fillStyle = '#333';
   const cellSize = 20;
   const pattern = generateQRPattern(qrData.code);
@@ -108,11 +107,9 @@ function generateQR() {
     }
   }
 
-  // Mostrar QR
   document.getElementById('qr-display').classList.remove('hidden');
   showNotification('QR generado - válido por 5 minutos', 'success');
 
-  // Auto-expirar
   setTimeout(() => {
     if (qrCode && qrCode.timestamp === qrData.timestamp) {
       qrCode = null;
@@ -123,7 +120,6 @@ function generateQR() {
 }
 
 function generateQRPattern(code) {
-  // Patrón simulado basado en el código
   const hash = code.split('').reduce((a, c) => a + c.charCodeAt(0), 0);
   const pattern = [];
   for (let i = 0; i < 10; i++) {
@@ -140,6 +136,7 @@ function generateQRPattern(code) {
 function renderAttendanceTable(filteredData = null) {
   const data = filteredData || attendanceData;
   const tbody = document.getElementById('attendance-body');
+  if (!tbody) return;
   
   tbody.innerHTML = data.length ? data.map(record => `
     <tr>
@@ -174,8 +171,10 @@ function applyFilters() {
 }
 
 function populateAlumnoFilter() {
-  const uniqueAlumnos = [...new Set(attendanceData.map(r => r.matricula))];
   const select = document.getElementById('filter-alumno');
+  if (!select) return;
+
+  const uniqueAlumnos = [...new Set(attendanceData.map(r => r.matricula))];
   
   select.innerHTML = '<option value="">Todos</option>' + 
     uniqueAlumnos.map(m => `<option value="${m}">${m}</option>`).join('');
@@ -187,13 +186,11 @@ function exportReport() {
     return;
   }
 
-  // Crear CSV
   let csv = 'Fecha,Clase,Matricula,Nombre,Correo,Hora\n';
   attendanceData.forEach(r => {
     csv += `${formatDate(r.timestamp)},${r.class},${r.matricula},${r.nombre},${r.correo},${formatTime(r.timestamp)}\n`;
   });
 
-  // Descargar
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -223,8 +220,9 @@ function saveProfile() {
 
 function loadAlumnoProfile() {
   const profile = JSON.parse(localStorage.getItem('alumnoProfile'));
-  if (profile) {
-    document.getElementById('alumno-matricula').value = profile.matricula || '';
+  const inputMatricula = document.getElementById('alumno-matricula');
+  if (profile && inputMatricula) {
+    inputMatricula.value = profile.matricula || '';
     document.getElementById('alumno-nombre').value = profile.nombre || '';
     document.getElementById('alumno-correo').value = profile.correo || '';
   }
@@ -252,8 +250,6 @@ async function startScanner() {
     document.querySelector('.btn-stop').classList.remove('hidden');
     document.getElementById('scan-status').textContent = 'Escaneando...';
     
-    // Simular detección después de 3 segundos (para demo)
-    // En producción usarías una librería como html5-qrcode
     scanInterval = setTimeout(() => {
       if (qrCode) {
         registerAttendance(profile, qrCode);
@@ -281,23 +277,27 @@ function stopScanner() {
   }
   
   const video = document.getElementById('camera');
-  video.style.display = 'none';
-  video.srcObject = null;
+  if (video) {
+    video.style.display = 'none';
+    video.srcObject = null;
+  }
   
-  document.querySelector('.btn-primary[onclick="startScanner()"]').classList.remove('hidden');
-  document.querySelector('.btn-stop').classList.add('hidden');
-  document.getElementById('scan-status').textContent = 'Presiona el botón para escanear';
+  const btnStart = document.querySelector('.btn-primary[onclick="startScanner()"]');
+  const btnStop = document.querySelector('.btn-stop');
+  if (btnStart) btnStart.classList.remove('hidden');
+  if (btnStop) btnStop.classList.add('hidden');
+  
+  const status = document.getElementById('scan-status');
+  if (status) status.textContent = 'Presiona el botón para escanear';
 }
 
 function registerAttendance(profile, qr) {
-  // Verificar si el código no ha expirado
   if (Date.now() > qrExpirationTime) {
     showNotification('Código QR expirado', 'error');
     stopScanner();
     return;
   }
 
-  // Verificar si ya se registró en los últimos 5 minutos
   const recent = attendanceData.find(r => 
     r.matricula === profile.matricula && 
     Date.now() - r.timestamp < 5 * 60 * 1000
@@ -309,7 +309,6 @@ function registerAttendance(profile, qr) {
     return;
   }
 
-  // Registrar asistencia
   const record = {
     matricula: profile.matricula,
     nombre: profile.nombre,
@@ -330,14 +329,13 @@ function registerAttendance(profile, qr) {
 
 function renderAlumnoHistory() {
   const profile = JSON.parse(localStorage.getItem('alumnoProfile'));
-  if (!profile) return;
+  const container = document.getElementById('alumno-history');
+  if (!profile || !container) return;
 
   const myRecords = attendanceData
     .filter(r => r.matricula === profile.matricula)
     .sort((a, b) => b.timestamp - a.timestamp);
 
-  const container = document.getElementById('alumno-history');
-  
   container.innerHTML = myRecords.length ? myRecords.map(r => `
     <div class="history-item">
       <div class="class">${r.class}</div>
@@ -356,39 +354,4 @@ function formatTime(timestamp) {
     hour: '2-digit', 
     minute: '2-digit' 
   });
-}
-  statusElement.textContent = '✅ La app está instalada y funcionando';
-  statusElement.style.background = '#d4edda';
-  statusElement.style.color = '#155724';
-} else {
-  // Escuchar evento beforeinstallprompt
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    statusElement.textContent = '📲 Puedes instalar esta app en tu dispositivo';
-    installBtn.style.display = 'block';
-  });
-
-  // Botón de instalación
-  installBtn.addEventListener('click', async () => {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      console.log('Resultado:', outcome);
-      deferredPrompt = null;
-      installBtn.style.display = 'none';
-    }
-  });
-
-  // Si no hay soporte
-  if (!('serviceWorker' in navigator)) {
-    statusElement.textContent = '⚠️ Tu navegador no soporta PWAs';
-  } else {
-    statusElement.textContent = '✅ Navegador compatible. ¡Service Worker activo!';
-  }
-}
-
-// Notificaciones push (opcional - para futuro)
-if ('Notification' in window) {
-  console.log('Notificaciones soportadas');
 }

@@ -11,11 +11,17 @@ let scanInterval = null;
 // Usar window.onload para asegurar que todo está cargado
 window.onload = function() {
   // Splash screen - ocultar después de 2 segundos
+// Splash screen - ocultar después de 2 segundos
   setTimeout(() => {
     const splash = document.getElementById('splash');
     const home = document.getElementById('home');
+    
     if (splash) splash.classList.add('hidden');
-    if (home) home.classList.add('active');
+    
+    if (home) {
+      home.classList.remove('hidden'); // <--- Línea crucial
+      home.classList.add('active');
+    }
   }, 2000);
 
   // Service Worker
@@ -34,8 +40,14 @@ window.onload = function() {
 
 // ========== NAVEGACIÓN ==========
 function navigateTo(screenId) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.getElementById(screenId).classList.add('active');
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.classList.add('hidden'); // Asegura que todas se oculten
+  });
+  
+  const target = document.getElementById(screenId);
+  target.classList.remove('hidden'); // Muestra la seleccionada
+  target.classList.add('active');
 }
 
 // ========== NOTIFICACIONES ==========

@@ -40,8 +40,6 @@ window.onload = function() {
   }
 
   loadAlumnoProfile();
-  renderAttendanceTable();
-  renderAlumnoHistory();
   populateAlumnoFilter();
 };
 
@@ -123,7 +121,6 @@ function generateQR() {
     code: Math.random().toString(36).substring(2, 10).toUpperCase()
   };
 
-  // SUBIR A LA NUBE (FIREBASE)
   db.ref('activeQR').set(qrData);
 
   qrCode = qrData;
@@ -251,10 +248,8 @@ async function startScanner() {
     document.getElementById('scan-status').textContent = 'Consultando código en la nube...';
     
     scanInterval = setTimeout(() => {
-      // BUSCAR EN LA NUBE (FIREBASE)
       db.ref('activeQR').once('value').then((snapshot) => {
         const cloudQR = snapshot.val();
-        // Validar si existe y si tiene menos de 5 minutos de antigüedad
         if (cloudQR && (Date.now() - cloudQR.timestamp < 300000)) {
           registerAttendance(profile, cloudQR);
         } else {
@@ -290,7 +285,19 @@ function registerAttendance(profile, qr) {
     stopScanner();
     return;
   }
-  const record = { matricula: profile.matricula, nombre: profile.nombre, correo: profile.correo, class: qr.class, timestamp: Date.now(), code: qr.code };
+  
+  const record = { 
+    matricula: profile.matricula, 
+    nombre: profile.nombre, 
+    correo: profile.correo, 
+    class: qr.class, 
+    timestamp: Date.now(), 
+    code: qr.code 
+  };
+
+  // Enviar registro a Firebase
+  db.ref('attendanceRecords').push(record);
+
   attendanceData.push(record);
   localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
   showNotification(`Asistencia registrada: ${qr.class}`, 'success');
@@ -314,3 +321,14 @@ function renderAlumnoHistory() {
 
 function formatDate(timestamp) { return new Date(timestamp).toLocaleDateString('es-MX'); }
 function formatTime(timestamp) { return new Date(timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }
+
+// ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
+db.ref('attendanceRecords').on('value', (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    attendanceData = Object.values(data);
+    renderAttendanceTable();
+    populateAlumnoFilter();
+    renderAlumnoHistory();
+  }
+});

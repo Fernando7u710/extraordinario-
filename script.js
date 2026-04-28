@@ -1,4 +1,18 @@
-// ========== APP DE ASISTENCIA ESCOLAR ==========
+// ========== CONFIGURACIÓN DE FIREBASE ==========
+const firebaseConfig = {
+  apiKey: "AIzaSyAKWdc_fmUPnsa6S7rO7_NSnybybV-0cEc",
+  authDomain: "asistencia-57acd.firebaseapp.com",
+  databaseURL: "https://asistencia-57acd-default-rtdb.firebaseio.com",
+  projectId: "asistencia-57acd",
+  storageBucket: "asistencia-57acd.firebasestorage.app",
+  messagingSenderId: "855276452070",
+  appId: "1:855276452070:web:ca0f15f494ce4ecec9a327",
+  measurementId: "G-LT4JJXYE6S"
+};
+
+// Inicializar Firebase
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
 // ========== VARIABLES GLOBALES ==========
 let attendanceData = JSON.parse(localStorage.getItem('attendanceData')) || [];
@@ -12,9 +26,7 @@ window.onload = function() {
   setTimeout(() => {
     const splash = document.getElementById('splash');
     const home = document.getElementById('home');
-    
     if (splash) splash.classList.add('hidden');
-    
     if (home) {
       home.classList.remove('hidden');
       home.classList.add('active');
@@ -34,12 +46,9 @@ window.onload = function() {
 };
 
 // ========== SISTEMA DE AUTENTICACIÓN ==========
-
 function authMaestro() {
   const user = document.getElementById('user-maestro').value;
   const pass = document.getElementById('pass-maestro').value;
-
-  // Credenciales de prueba: admin / 1234
   if (user === "admin" && pass === "1234") {
     sessionStorage.setItem('isMaestro', 'true');
     navigateTo('maestro');
@@ -52,8 +61,6 @@ function authMaestro() {
 function authAlumno() {
   const matricula = document.getElementById('user-alumno').value;
   const pass = document.getElementById('pass-alumno').value;
-
-  // Para alumnos: cualquier matrícula y contraseña '1234'
   if (matricula.trim() !== "" && pass === "1234") {
     sessionStorage.setItem('isAlumno', 'true');
     navigateTo('alumno');
@@ -71,13 +78,8 @@ function logout() {
 
 // ========== NAVEGACIÓN PROTEGIDA ==========
 function navigateTo(screenId) {
-  // Protección de rutas: Si intenta ir a maestro/alumno sin login, lo mandamos al login
-  if (screenId === 'maestro' && !sessionStorage.getItem('isMaestro')) {
-    screenId = 'login-maestro';
-  }
-  if (screenId === 'alumno' && !sessionStorage.getItem('isAlumno')) {
-    screenId = 'login-alumno';
-  }
+  if (screenId === 'maestro' && !sessionStorage.getItem('isMaestro')) screenId = 'login-maestro';
+  if (screenId === 'alumno' && !sessionStorage.getItem('isAlumno')) screenId = 'login-alumno';
 
   document.querySelectorAll('.screen').forEach(s => {
     s.classList.remove('active');
@@ -95,13 +97,10 @@ function navigateTo(screenId) {
 function showNotification(message, type = 'info') {
   const toast = document.getElementById('notification-toast');
   const msgSpan = document.getElementById('notification-message');
-  
   if (!toast || !msgSpan) return;
-
   toast.className = `notification ${type}`;
   msgSpan.textContent = message;
   toast.classList.remove('hidden');
-  
   setTimeout(() => closeNotification(), 4000);
 }
 
@@ -113,7 +112,6 @@ function closeNotification() {
 // ========== VISTA MAESTRO: GENERAR QR ==========
 function generateQR() {
   const className = document.getElementById('class-name').value.trim();
-  
   if (!className) {
     showNotification('Ingresa el nombre de la clase', 'warning');
     return;
@@ -125,6 +123,9 @@ function generateQR() {
     code: Math.random().toString(36).substring(2, 10).toUpperCase()
   };
 
+  // SUBIR A LA NUBE (FIREBASE)
+  db.ref('activeQR').set(qrData);
+
   qrCode = qrData;
   qrExpirationTime = Date.now() + 5 * 60 * 1000;
 
@@ -132,32 +133,20 @@ function generateQR() {
   const ctx = canvas.getContext('2d');
   canvas.width = 200;
   canvas.height = 200;
-
   ctx.fillStyle = 'white';
   ctx.fillRect(0, 0, 200, 200);
-
   ctx.fillStyle = '#333';
   const cellSize = 20;
   const pattern = generateQRPattern(qrData.code);
   
   for (let y = 0; y < 10; y++) {
     for (let x = 0; x < 10; x++) {
-      if (pattern[y][x]) {
-        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-      }
+      if (pattern[y][x]) ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
   }
 
   document.getElementById('qr-display').classList.remove('hidden');
-  showNotification('QR generado - válido por 5 minutos', 'success');
-
-  setTimeout(() => {
-    if (qrCode && qrCode.timestamp === qrData.timestamp) {
-      qrCode = null;
-      document.getElementById('qr-display').classList.add('hidden');
-      showNotification('Código QR expirado', 'warning');
-    }
-  }, 5 * 60 * 1000);
+  showNotification('QR generado y subido a la nube', 'success');
 }
 
 function generateQRPattern(code) {
@@ -165,9 +154,7 @@ function generateQRPattern(code) {
   const pattern = [];
   for (let i = 0; i < 10; i++) {
     const row = [];
-    for (let j = 0; j < 10; j++) {
-      row.push((hash + i * j) % 3 !== 0);
-    }
+    for (let j = 0; j < 10; j++) row.push((hash + i * j) % 3 !== 0);
     pattern.push(row);
   }
   return pattern;
@@ -178,7 +165,6 @@ function renderAttendanceTable(filteredData = null) {
   const data = filteredData || attendanceData;
   const tbody = document.getElementById('attendance-body');
   if (!tbody) return;
-  
   tbody.innerHTML = data.length ? data.map(record => `
     <tr>
       <td>${formatDate(record.timestamp)}</td>
@@ -193,32 +179,18 @@ function renderAttendanceTable(filteredData = null) {
 function applyFilters() {
   const fecha = document.getElementById('filter-date').value;
   const alumno = document.getElementById('filter-alumno').value;
-
   let filtered = [...attendanceData];
-
-  if (fecha) {
-    filtered = filtered.filter(r => {
-      const recordDate = new Date(r.timestamp).toISOString().split('T')[0];
-      return recordDate === fecha;
-    });
-  }
-
-  if (alumno) {
-    filtered = filtered.filter(r => r.matricula === alumno);
-  }
-
+  if (fecha) filtered = filtered.filter(r => new Date(r.timestamp).toISOString().split('T')[0] === fecha);
+  if (alumno) filtered = filtered.filter(r => r.matricula === alumno);
   renderAttendanceTable(filtered);
-  showNotification(` ${filtered.length} registros encontrados`, 'info');
+  showNotification(`${filtered.length} registros encontrados`, 'info');
 }
 
 function populateAlumnoFilter() {
   const select = document.getElementById('filter-alumno');
   if (!select) return;
-
   const uniqueAlumnos = [...new Set(attendanceData.map(r => r.matricula))];
-  
-  select.innerHTML = '<option value="">Todos</option>' + 
-    uniqueAlumnos.map(m => `<option value="${m}">${m}</option>`).join('');
+  select.innerHTML = '<option value="">Todos</option>' + uniqueAlumnos.map(m => `<option value="${m}">${m}</option>`).join('');
 }
 
 function exportReport() {
@@ -226,19 +198,14 @@ function exportReport() {
     showNotification('No hay datos para exportar', 'warning');
     return;
   }
-
   let csv = 'Fecha,Clase,Matricula,Nombre,Correo,Hora\n';
-  attendanceData.forEach(r => {
-    csv += `${formatDate(r.timestamp)},${r.class},${r.matricula},${r.nombre},${r.correo},${formatTime(r.timestamp)}\n`;
-  });
-
+  attendanceData.forEach(r => csv += `${formatDate(r.timestamp)},${r.class},${r.matricula},${r.nombre},${r.correo},${formatTime(r.timestamp)}\n`);
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = `asistencia_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
-  
   showNotification('Reporte exportado', 'success');
 }
 
@@ -247,15 +214,12 @@ function saveProfile() {
   const matricula = document.getElementById('alumno-matricula').value.trim();
   const nombre = document.getElementById('alumno-nombre').value.trim();
   const correo = document.getElementById('alumno-correo').value.trim();
-
   if (!matricula || !nombre || !correo) {
     showNotification('Completa todos los campos', 'warning');
     return;
   }
-
   const profile = { matricula, nombre, correo };
   localStorage.setItem('alumnoProfile', JSON.stringify(profile));
-  
   showNotification('Perfil guardado', 'success');
 }
 
@@ -269,99 +233,66 @@ function loadAlumnoProfile() {
   }
 }
 
-// ========== VISTA ALUMNO: ESCANEAR QR ==========
+// ========== VISTA ALUMNO: ESCANEAR QR (NUBE) ==========
 async function startScanner() {
   const profile = JSON.parse(localStorage.getItem('alumnoProfile'));
-  
   if (!profile) {
     showNotification('Primero completa tu perfil', 'warning');
     return;
   }
 
   try {
-    videoStream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: 'environment' } 
-    });
-    
+    videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
     const video = document.getElementById('camera');
     video.srcObject = videoStream;
     video.style.display = 'block';
-    
     document.querySelector('.btn-primary[onclick="startScanner()"]').classList.add('hidden');
     document.querySelector('.btn-stop').classList.remove('hidden');
-    document.getElementById('scan-status').textContent = 'Escaneando...';
+    document.getElementById('scan-status').textContent = 'Consultando código en la nube...';
     
     scanInterval = setTimeout(() => {
-      if (qrCode) {
-        registerAttendance(profile, qrCode);
-      } else {
-        showNotification('No hay código QR activo', 'warning');
-        stopScanner();
-      }
+      // BUSCAR EN LA NUBE (FIREBASE)
+      db.ref('activeQR').once('value').then((snapshot) => {
+        const cloudQR = snapshot.val();
+        // Validar si existe y si tiene menos de 5 minutos de antigüedad
+        if (cloudQR && (Date.now() - cloudQR.timestamp < 300000)) {
+          registerAttendance(profile, cloudQR);
+        } else {
+          showNotification('No hay código QR activo en la nube', 'warning');
+          stopScanner();
+        }
+      });
     }, 5000);
     
   } catch (err) {
     showNotification('Error al acceder a la cámara', 'error');
-    console.error(err);
   }
 }
 
 function stopScanner() {
-  if (videoStream) {
-    videoStream.getTracks().forEach(track => track.stop());
-    videoStream = null;
-  }
-  
-  if (scanInterval) {
-    clearTimeout(scanInterval);
-    scanInterval = null;
-  }
-  
+  if (videoStream) videoStream.getTracks().forEach(track => track.stop());
+  videoStream = null;
+  if (scanInterval) clearTimeout(scanInterval);
+  scanInterval = null;
   const video = document.getElementById('camera');
-  if (video) {
-    video.style.display = 'none';
-    video.srcObject = null;
-  }
-  
+  if (video) { video.style.display = 'none'; video.srcObject = null; }
   const btnStart = document.querySelector('.btn-primary[onclick="startScanner()"]');
   const btnStop = document.querySelector('.btn-stop');
   if (btnStart) btnStart.classList.remove('hidden');
   if (btnStop) btnStop.classList.add('hidden');
-  
-  const status = document.getElementById('scan-status');
-  if (status) status.textContent = 'Presiona el botón para escanear';
+  document.getElementById('scan-status').textContent = 'Presiona el botón para escanear';
 }
 
 function registerAttendance(profile, qr) {
-  if (Date.now() > qrExpirationTime) {
-    showNotification('Código QR expirado', 'error');
-    stopScanner();
-    return;
-  }
-
-  const recent = attendanceData.find(r => 
-    r.matricula === profile.matricula && 
-    Date.now() - r.timestamp < 5 * 60 * 1000
-  );
-
+  const recent = attendanceData.find(r => r.matricula === profile.matricula && Date.now() - r.timestamp < 5 * 60 * 1000);
   if (recent) {
     showNotification('Ya te registraste recientemente', 'warning');
     stopScanner();
     return;
   }
-
-  const record = {
-    matricula: profile.matricula,
-    nombre: profile.nombre,
-    correo: profile.correo,
-    class: qr.class,
-    timestamp: Date.now(),
-    code: qr.code
-  };
-
+  const record = { matricula: profile.matricula, nombre: profile.nombre, correo: profile.correo, class: qr.class, timestamp: Date.now(), code: qr.code };
   attendanceData.push(record);
   localStorage.setItem('attendanceData', JSON.stringify(attendanceData));
-
   showNotification(`Asistencia registrada: ${qr.class}`, 'success');
   stopScanner();
   renderAlumnoHistory();
@@ -372,11 +303,7 @@ function renderAlumnoHistory() {
   const profile = JSON.parse(localStorage.getItem('alumnoProfile'));
   const container = document.getElementById('alumno-history');
   if (!profile || !container) return;
-
-  const myRecords = attendanceData
-    .filter(r => r.matricula === profile.matricula)
-    .sort((a, b) => b.timestamp - a.timestamp);
-
+  const myRecords = attendanceData.filter(r => r.matricula === profile.matricula).sort((a, b) => b.timestamp - a.timestamp);
   container.innerHTML = myRecords.length ? myRecords.map(r => `
     <div class="history-item">
       <div class="class">${r.class}</div>
@@ -385,14 +312,5 @@ function renderAlumnoHistory() {
   `).join('') : '<p style="color:#666;text-align:center;">Sin registros aún</p>';
 }
 
-// ========== UTILIDADES ==========
-function formatDate(timestamp) {
-  return new Date(timestamp).toLocaleDateString('es-MX');
-}
-
-function formatTime(timestamp) {
-  return new Date(timestamp).toLocaleTimeString('es-MX', { 
-    hour: '2-digit', 
-    minute: '2-digit' 
-  });
-}
+function formatDate(timestamp) { return new Date(timestamp).toLocaleDateString('es-MX'); }
+function formatTime(timestamp) { return new Date(timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }

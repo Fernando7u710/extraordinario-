@@ -159,27 +159,41 @@ function generateQRPattern(code) {
 }
 
 // ========== VISTA MAESTRO: REPORTES ==========
+// Actualiza la función renderAttendanceTable para incluir la columna Grupo
 function renderAttendanceTable(filteredData = null) {
   const data = filteredData || attendanceData;
   const tbody = document.getElementById('attendance-body');
   if (!tbody) return;
+  
   tbody.innerHTML = data.length ? data.map(record => `
     <tr>
       <td>${formatDate(record.timestamp)}</td>
       <td>${record.class}</td>
-      <td>${record.matricula}</td>
+      <td>${record.grupo || 'N/A'}</td> <td>${record.matricula}</td>
       <td>${record.nombre}</td>
       <td>${formatTime(record.timestamp)}</td>
     </tr>
-  `).join('') : '<tr><td colspan="5" style="text-align:center;color:#666;">No hay registros</td></tr>';
+  `).join('') : '<tr><td colspan="6" style="text-align:center;">No hay registros</td></tr>';
 }
 
+// Actualiza applyFilters para incluir Asignatura y Grupo
 function applyFilters() {
   const fecha = document.getElementById('filter-date').value;
-  const alumno = document.getElementById('filter-alumno').value;
+  const asignatura = document.getElementById('filter-asignatura').value.toLowerCase();
+  const grupo = document.getElementById('filter-grupo').value.toLowerCase();
+
   let filtered = [...attendanceData];
-  if (fecha) filtered = filtered.filter(r => new Date(r.timestamp).toISOString().split('T')[0] === fecha);
-  if (alumno) filtered = filtered.filter(r => r.matricula === alumno);
+
+  if (fecha) {
+    filtered = filtered.filter(r => new Date(r.timestamp).toISOString().split('T')[0] === fecha);
+  }
+  if (asignatura) {
+    filtered = filtered.filter(r => r.class.toLowerCase().includes(asignatura));
+  }
+  if (grupo) {
+    filtered = filtered.filter(r => r.grupo && r.grupo.toLowerCase().includes(grupo));
+  }
+
   renderAttendanceTable(filtered);
   showNotification(`${filtered.length} registros encontrados`, 'info');
 }
@@ -196,38 +210,50 @@ function exportReport() {
     showNotification('No hay datos para exportar', 'warning');
     return;
   }
-  let csv = 'Fecha,Clase,Matricula,Nombre,Correo,Hora\n';
-  attendanceData.forEach(r => csv += `${formatDate(r.timestamp)},${r.class},${r.matricula},${r.nombre},${r.correo},${formatTime(r.timestamp)}\n`);
+  // Añadimos "Grupo" al encabezado
+  let csv = 'Fecha,Clase,Grupo,Matricula,Nombre,Correo,Hora\n';
+  attendanceData.forEach(r => {
+    // Añadimos el dato del grupo en cada fila
+    csv += `${formatDate(r.timestamp)},${r.class},${r.grupo || 'N/A'},${r.matricula},${r.nombre},${r.correo},${formatTime(r.timestamp)}\n`;
+  });
+  
   const blob = new Blob([csv], { type: 'text/csv' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = `asistencia_${new Date().toISOString().split('T')[0]}.csv`;
   a.click();
-  showNotification('Reporte exportado', 'success');
+  showNotification('Reporte exportado con éxito', 'success');
 }
 
 // ========== VISTA ALUMNO: PERFIL ==========
+// Actualiza la función saveProfile
 function saveProfile() {
   const matricula = document.getElementById('alumno-matricula').value.trim();
   const nombre = document.getElementById('alumno-nombre').value.trim();
   const correo = document.getElementById('alumno-correo').value.trim();
-  if (!matricula || !nombre || !correo) {
-    showNotification('Completa todos los campos', 'warning');
+  const grupo = document.getElementById('alumno-grupo').value.trim(); // Nuevo campo
+
+  if (!matricula || !nombre || !correo || !grupo) {
+    showNotification('Completa todos los campos, incluyendo el grupo', 'warning');
     return;
   }
-  const profile = { matricula, nombre, correo };
+
+  const profile = { matricula, nombre, correo, grupo };
   localStorage.setItem('alumnoProfile', JSON.stringify(profile));
-  showNotification('Perfil guardado', 'success');
+  showNotification('Perfil guardado correctamente', 'success');
 }
 
+// Actualiza la función loadAlumnoProfile
 function loadAlumnoProfile() {
   const profile = JSON.parse(localStorage.getItem('alumnoProfile'));
-  const inputMatricula = document.getElementById('alumno-matricula');
-  if (profile && inputMatricula) {
-    inputMatricula.value = profile.matricula || '';
+  if (profile) {
+    document.getElementById('alumno-matricula').value = profile.matricula || '';
     document.getElementById('alumno-nombre').value = profile.nombre || '';
     document.getElementById('alumno-correo').value = profile.correo || '';
+    if (document.getElementById('alumno-grupo')) {
+        document.getElementById('alumno-grupo').value = profile.grupo || '';
+    }
   }
 }
 
@@ -280,17 +306,19 @@ function stopScanner() {
 }
 
 function registerAttendance(profile, qr) {
-  const recent = attendanceData.find(r => r.matricula === profile.matricula && Date.now() - r.timestamp < 5 * 60 * 1000);
+  const recent = attendanceData.find(r => r.matricula === profile.matricula && r.class === qr.class);
+  
   if (recent) {
-    showNotification('Ya te registraste recientemente', 'warning');
+    showNotification('Ya registrado en esta clase', 'warning');
     stopScanner();
     return;
   }
-  
+
   const record = { 
     matricula: profile.matricula, 
     nombre: profile.nombre, 
-    correo: profile.correo, 
+    correo: profile.correo,
+    grupo: profile.grupo, // Agregamos el grupo al registro
     class: qr.class, 
     timestamp: Date.now(), 
     code: qr.code 

@@ -103,38 +103,47 @@
         </div>
       </section>
 
-      <section class="reports-section">
-        <h2>Reportes de Asistencia</h2>
-        <div class="filters">
-          <div class="filter-group">
-            <label>Fecha:</label>
-            <input type="date" id="filter-date">
-          </div>
-          <div class="filter-group">
-            <label>Alumno:</label>
-            <select id="filter-alumno">
-              <option value="">Todos</option>
-            </select>
-          </div>
-          <button class="btn-secondary" onclick="applyFilters()">Filtrar</button>
-        </div>
-        <div class="table-container">
-          <table id="attendance-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Clase</th>
-                <th>Matrícula</th>
-                <th>Nombre</th>
-                <th>Hora</th>
-              </tr>
-            </thead>
-            <tbody id="attendance-body">
-            </tbody>
-          </table>
-        </div>
-        <button class="btn-export" onclick="exportReport()">📥 Exportar Excel</button>
-      </section>
+      <<section class="reports-section">
+  <h2>Reportes de Asistencia</h2>
+  <div class="filters">
+    <div class="filter-group">
+      <label>Fecha:</label>
+      <input type="date" id="filter-date">
+    </div>
+    <div class="filter-group">
+      <label>Asignatura:</label>
+      <input type="text" id="filter-asignatura" placeholder="Ej: Mate">
+    </div>
+    <div class="filter-group">
+      <label>Grupo:</label>
+      <input type="text" id="filter-grupo" placeholder="Ej: 4B">
+    </div>
+    <div class="filter-group">
+      <label>Alumno:</label>
+      <select id="filter-alumno">
+        <option value="">Todos</option>
+      </select>
+    </div>
+    <button class="btn-secondary" onclick="applyFilters()">Filtrar</button>
+  </div>
+  
+  <div class="table-container">
+    <table id="attendance-table">
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Clase</th>
+          <th>Grupo</th> <th>Matrícula</th>
+          <th>Nombre</th>
+          <th>Hora</th>
+        </tr>
+      </thead>
+      <tbody id="attendance-body">
+      </tbody>
+    </table>
+  </div>
+  <button class="btn-export" onclick="exportReport()">📥 Exportar Excel</button>
+</section>
     </main>
   </div>
 
@@ -148,19 +157,23 @@
       <section class="profile-section">
         <h2>Datos del Alumno</h2>
         <div class="form-group">
-          <label>Matrícula:</label>
-          <input type="text" id="alumno-matricula" placeholder="Ingresa tu matrícula">
+            <label>Matrícula:</label>
+            <input type="text" id="alumno-matricula" placeholder="Ingresa tu matrícula">
         </div>
         <div class="form-group">
-          <label>Nombre:</label>
-          <input type="text" id="alumno-nombre" placeholder="Ingresa tu nombre">
+            <label>Nombre:</label>
+            <input type="text" id="alumno-nombre" placeholder="Ingresa tu nombre">
         </div>
         <div class="form-group">
-          <label>Correo:</label>
-          <input type="email" id="alumno-correo" placeholder="correo@escuela.mx">
+            <label>Correo:</label>
+            <input type="email" id="alumno-correo" placeholder="correo@escuela.mx">
+        </div>
+        <div class="form-group">
+            <label>Grupo:</label>
+            <input type="text" id="alumno-grupo" placeholder="Ej: 4B">
         </div>
         <button class="btn-primary" onclick="saveProfile()">💾 Guardar Perfil</button>
-      </section>
+        </section>
 
       <section class="scan-section">
         <h2>Escanear QR</h2>

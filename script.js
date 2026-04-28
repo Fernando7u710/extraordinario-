@@ -324,10 +324,14 @@ function formatDate(timestamp) { return new Date(timestamp).toLocaleDateString('
 function formatTime(timestamp) { return new Date(timestamp).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }); }
 
 // ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
+// ========== SINCRONIZACIÓN EN TIEMPO REAL ==========
 db.ref('attendanceRecords').on('value', (snapshot) => {
   const data = snapshot.val();
   if (data) {
+    // Convertimos los datos de la nube en un arreglo
     attendanceData = Object.values(data);
+    
+    // Mandamos llamar a las funciones que dibujan la tabla y los filtros
     renderAttendanceTable();
     populateAlumnoFilter();
     renderAlumnoHistory();

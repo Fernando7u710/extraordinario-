@@ -1,7 +1,7 @@
 {
-  "name": "Extraordinario",
-  "short_name": "Extraordinario",
-  "description": "Mi primera Progressive Web App",
+  "name": "Asistencia Escolar",
+  "short_name": "Asistencia",
+  "description": "App de asistencia escolar con código QR",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

@@ -3,34 +3,153 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Mi primera Progressive Web App">
+  <meta name="description" content="App de Asistencia Escolar">
   <meta name="theme-color" content="#4a90e2">
-  <title>Mi PWA</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Asistencia">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="styles.css">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <title>Asistencia Escolar</title>
 </head>
 <body>
-  <header>
-    <h1>Mi PWA</h1>
-    <p>¡Hola! Esta es una Progressive Web App básica.</p>
-  </header>
+  <!-- Splash Screen -->
+  <div id="splash">
+    <div class="splash-content">
+      <div class="logo">🎓</div>
+      <h1>Asistencia Escolar</h1>
+      <div class="loader"></div>
+    </div>
+  </div>
 
-  <main>
-    <section class="features">
-      <h2>Características</h2>
-      <ul>
-        <li>✅ Instalable en dispositivo</li>
-        <li>✅ Funciona sin conexión</li>
-        <li>✅ Carga rápida</li>
-      </ul>
-    </section>
+  <!-- Home - Selección de rol -->
+  <div id="home" class="screen hidden">
+    <header>
+      <h1>Asistencia Escolar</h1>
+      <p>Selecciona tu rol</p>
+    </header>
+    <main>
+      <div class="role-cards">
+        <div class="role-card" onclick="navigateTo('maestro')">
+          <div class="icon">👨‍🏫</div>
+          <h2>Maestro</h2>
+          <p>Generar QR y ver reportes</p>
+        </div>
+        <div class="role-card" onclick="navigateTo('alumno')">
+          <div class="icon">👨‍🎓</div>
+          <h2>Alumno</h2>
+          <p>Escanear código QR</p>
+        </div>
+      </div>
+    </main>
+  </div>
 
-    <section class="status">
-      <h2>Estado de Instalación</h2>
-      <p id="install-status">Detectando soporte...</p>
-    </section>
-  </main>
+  <!-- Vista Maestro -->
+  <div id="maestro" class="screen hidden">
+    <header>
+      <button class="back-btn" onclick="navigateTo('home')">←</button>
+      <h1>Panel del Maestro</h1>
+    </header>
+    <main>
+      <section class="qr-section">
+        <h2>Generar Código QR</h2>
+        <div class="form-group">
+          <label>Nombre de la clase:</label>
+          <input type="text" id="class-name" placeholder="Ej: Matemáticas 101">
+        </div>
+        <button class="btn-primary" onclick="generateQR()">Generar QR</button>
+        <div id="qr-display" class="qr-container hidden">
+          <canvas id="qr-canvas"></canvas>
+          <p class="qr-info">Código válido por 5 minutos</p>
+        </div>
+      </section>
+
+      <section class="reports-section">
+        <h2>Reportes de Asistencia</h2>
+        <div class="filters">
+          <div class="filter-group">
+            <label>Fecha:</label>
+            <input type="date" id="filter-date">
+          </div>
+          <div class="filter-group">
+            <label>Alumno:</label>
+            <select id="filter-alumno">
+              <option value="">Todos</option>
+            </select>
+          </div>
+          <button class="btn-secondary" onclick="applyFilters()">Filtrar</button>
+        </div>
+        <div class="table-container">
+          <table id="attendance-table">
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Clase</th>
+                <th>Matrícula</th>
+                <th>Nombre</th>
+                <th>Hora</th>
+              </tr>
+            </thead>
+            <tbody id="attendance-body">
+            </tbody>
+          </table>
+        </div>
+        <button class="btn-export" onclick="exportReport()">📥 Exportar Excel</button>
+      </section>
+    </main>
+  </div>
+
+  <!-- Vista Alumno -->
+  <div id="alumno" class="screen hidden">
+    <header>
+      <button class="back-btn" onclick="navigateTo('home')">←</button>
+      <h1>Registro de Asistencia</h1>
+    </header>
+    <main>
+      <section class="profile-section">
+        <h2>Datos del Alumno</h2>
+        <div class="form-group">
+          <label>Matrícula:</label>
+          <input type="text" id="alumno-matricula" placeholder="Ingresa tu matrícula">
+        </div>
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input type="text" id="alumno-nombre" placeholder="Ingresa tu nombre">
+        </div>
+        <div class="form-group">
+          <label>Correo:</label>
+          <input type="email" id="alumno-correo" placeholder="correo@escuela.mx">
+        </div>
+        <button class="btn-primary" onclick="saveProfile()">💾 Guardar Perfil</button>
+      </section>
+
+      <section class="scan-section">
+        <h2>Escanear QR</h2>
+        <div class="camera-container">
+          <video id="camera" autoplay playsinline></video>
+          <div class="scan-overlay">
+            <div class="scan-frame"></div>
+          </div>
+        </div>
+        <button class="btn-primary" onclick="startScanner()">📷 Iniciar Cámara</button>
+        <button class="btn-stop hidden" onclick="stopScanner()">⏹ Detener</button>
+        <p id="scan-status" class="scan-status">Presiona el botón para escanear</p>
+      </section>
+
+      <section class="history-section">
+        <h2>Mi Historial</h2>
+        <div id="alumno-history" class="history-list">
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Notificaciones -->
+  <div id="notification-toast" class="notification hidden">
+    <span id="notification-message"></span>
+    <button onclick="closeNotification()">✕</button>
+  </div>
 
   <script src="script.js"></script>
 </body>
